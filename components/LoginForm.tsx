@@ -16,27 +16,48 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Login-Versuch mit:', { username, password })
 
     try {
+      // Erst prüfen wir, ob wir die Admin-Tabelle überhaupt lesen können
+      const { data: testData, error: testError } = await supabase
+        .from('admin')
+        .select('*')
+      
+      if (testError) {
+        console.error('Fehler beim Zugriff auf Admin-Tabelle:', testError)
+        toast.error('Datenbankfehler')
+        return
+      }
+
+      console.log('Verfügbare Admin-Einträge:', testData)
+
+      // Dann versuchen wir den Login
       const { data, error } = await supabase
         .from('admin')
         .select('*')
         .eq('username', username)
         .eq('password', password)
-        .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Fehler bei der Admin-Suche:', error)
+        toast.error('Fehler beim Login')
+        return
+      }
 
-      if (data) {
+      console.log('Login-Ergebnis:', data)
+
+      if (data && data.length > 0) {
         localStorage.setItem('isAdmin', 'true')
-        onLogin()
         toast.success('Erfolgreich eingeloggt')
+        onLogin()
       } else {
+        console.log('Keine übereinstimmenden Anmeldedaten gefunden für:', { username, password })
         toast.error('Ungültige Anmeldedaten')
       }
     } catch (error) {
-      console.error('Fehler beim Login:', error)
-      toast.error('Fehler beim Login')
+      console.error('Unerwarteter Fehler beim Login:', error)
+      toast.error('Unerwarteter Fehler beim Login')
     }
   }
 
@@ -49,20 +70,23 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         .update({ password: newPassword })
         .eq('username', username)
 
-      if (error) throw error
+      if (error) {
+        console.error('Fehler beim Ändern des Passworts:', error)
+        toast.error('Fehler beim Ändern des Passworts: ' + error.message)
+        return
+      }
 
       setNewPassword('')
       setIsChangingPassword(false)
       toast.success('Passwort erfolgreich geändert')
     } catch (error) {
-      console.error('Fehler beim Ändern des Passworts:', error)
-      toast.error('Fehler beim Ändern des Passworts')
+      console.error('Unerwarteter Fehler beim Ändern des Passworts:', error)
+      toast.error('Unerwarteter Fehler beim Ändern des Passworts')
     }
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <h2 className="text-xl font-semibold mb-4">Admin Login</h2>
+    <div className="space-y-4">
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -98,9 +122,15 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         </button>
       </form>
 
+      <button
+        onClick={() => setIsChangingPassword(!isChangingPassword)}
+        className="text-sm text-blue-600 hover:text-blue-800"
+      >
+        {isChangingPassword ? 'Abbrechen' : 'Passwort ändern'}
+      </button>
+
       {isChangingPassword && (
-        <form onSubmit={handlePasswordChange} className="mt-6 space-y-4">
-          <h3 className="text-lg font-medium">Passwort ändern</h3>
+        <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
             <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
               Neues Passwort
@@ -122,13 +152,6 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           </button>
         </form>
       )}
-
-      <button
-        onClick={() => setIsChangingPassword(!isChangingPassword)}
-        className="mt-4 text-sm text-blue-600 hover:text-blue-800"
-      >
-        {isChangingPassword ? 'Abbrechen' : 'Passwort ändern'}
-      </button>
     </div>
   )
 } 
