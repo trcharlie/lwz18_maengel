@@ -2,7 +2,11 @@ import { supabase } from '@/lib/supabase'
 import MangelList from '@/components/MangelList'
 import MangelStats from '@/components/MangelStats'
 import CreateMangelForm from '@/components/CreateMangelForm'
-import LoginButton from '@/components/LoginButton'
+import dynamic from 'next/dynamic'
+
+const LoginButton = dynamic(() => import('@/components/LoginButton'), {
+  ssr: false
+})
 
 export default async function Home() {
   const { data: maengel, error } = await supabase
