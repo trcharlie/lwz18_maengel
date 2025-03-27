@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -8,6 +8,12 @@ export default function CreateMangelForm() {
   const [title, setTitle] = useState('')
   const [comment, setComment] = useState('')
   const [imagePath, setImagePath] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const adminStatus = localStorage.getItem('isAdmin') === 'true'
+    setIsAdmin(adminStatus)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,6 +40,10 @@ export default function CreateMangelForm() {
       console.error('Fehler beim Erstellen des Mangels:', error)
       toast.error('Fehler beim Erstellen des Mangels')
     }
+  }
+
+  if (!isAdmin) {
+    return null
   }
 
   return (

@@ -23,6 +23,7 @@ export default async function Home() {
       </div>
       <MangelStats maengel={maengel || []} />
       <div className="mt-8">
+        <CreateMangelForm />
         <MangelList maengel={maengel || []} />
       </div>
     </main>
